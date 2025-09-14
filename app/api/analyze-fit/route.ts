@@ -1,4 +1,12 @@
+import { openai } from '@ai-sdk/openai';
+import { generateObject } from 'ai';
+import { z } from 'zod';
+import { streamText, UIMessage, convertToModelMessages } from 'ai';
 import { type NextRequest, NextResponse } from "next/server"
+import { groq } from '@ai-sdk/groq';
+
+// Allow streaming responses up to 30 seconds
+export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,53 +16,69 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Image is required" }, { status: 400 })
     }
 
-    // For now, we'll use a mock response since Cohere integration requires API keys
-    // In production, you would integrate with Cohere's API here
-    const mockAnalysis = {
-      rating: Math.floor(Math.random() * 4) + 6, // Random rating between 6-10
-      categories: {
-        coordination: Math.floor(Math.random() * 3) + 6, // 6-8
-        color: Math.floor(Math.random() * 4) + 5, // 5-8
-        fit: Math.floor(Math.random() * 3) + 7, // 7-9
-        style: Math.floor(Math.random() * 4) + 6, // 6-9
-      },
-      suggestions: [
-        "Consider tucking in your shirt for a more polished look",
-        "The color combination works well - keep this palette",
-        "Add a watch or simple jewelry as an accent piece",
-        "Your outfit fits well for the described event",
-      ],
-      recommendations: [
-        {
-          name: "Classic Oxford Dress Shoes",
-          price: "$89.99",
-          store: "Nordstrom",
-          image: "/black-oxford-dress-shoes.jpg",
-        },
-        {
-          name: "Silver Minimalist Watch",
-          price: "$149.99",
-          store: "Target",
-          image: "/placeholder-t2b5t.png",
-        },
-        {
-          name: "Leather Belt - Black",
-          price: "$34.99",
-          store: "Macy's",
-          image: "/black-leather-belt.png",
-        },
-      ],
-    }
+    const { object } = await generateObject({
+      model: groq("meta-llama/llama-4-maverick-17b-128e-instruct"),
+      schema: z.object({
+        rating: z.int(),
+        categories: z.object({
+          coordination: z.int(),
+          color: z.int(),
+          fit: z.int(),
+          style: z.int(),
+        }),
+        suggestions: z.array(z.string()),
+        recommendations: z.array(z.object({
+          name: z.string(),
+          price: z.string(),
+          store: z.string(),
+          image: z.string()
+        }))
+      }),
+       messages: [
+    {
+      role: 'user',
+      content: [
+        { type: 'text', text: `Analyze this outfit image for a ${eventText}.
+Rate it 1-10 overall and provide category ratings for:
+- Outfit coordination (1-10)
+- Color harmony (1-10)
+- Fit quality (1-10)
+- Style appropriateness (1-10)
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+Also provide specific improvement suggestions and recommend 3 clothing items.
 
-    return NextResponse.json(mockAnalysis)
+Return only valid JSON in the following format:
+{
+  "rating": number,
+  "categories": {
+    "coordination": number,
+    "color": number,
+    "fit": number,
+    "style": number
+  },
+  "suggestions": string[],
+  "recommendations": [
+    { "name": string, "price": string, "store": string, "image": string }
+  ]` },
+        {
+          type: 'image',
+          image: image,
+        },
+      ],
+    },
+  ],
+  });
+
+    return NextResponse.json(object);
   } catch (error) {
-    console.error("Error analyzing fit:", error)
-    return NextResponse.json({ error: "Failed to analyze fit" }, { status: 500 })
+    console.error("Error analyzing outfit:", error);
+    return NextResponse.json(
+      { error: "Failed to analyze outfit" },
+      { status: 500 }
+    );
   }
 }
+
 
 /* 
 To integrate with Cohere in production, you would:
