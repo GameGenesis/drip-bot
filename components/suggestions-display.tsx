@@ -20,7 +20,7 @@ interface SuggestionsDisplayProps {
 export function SuggestionsDisplay({ suggestions, recommendations }: SuggestionsDisplayProps) {
   return (
     <div className="space-y-6">
-      {/* Improvement Suggestions */}
+
       <Card className="p-6">
         <div className="flex items-center space-x-2 mb-4">
           <Lightbulb className="h-5 w-5 text-accent" />
@@ -38,7 +38,6 @@ export function SuggestionsDisplay({ suggestions, recommendations }: Suggestions
         </div>
       </Card>
 
-      {/* Product Recommendations */}
       <Card className="p-6">
         <div className="flex items-center space-x-2 mb-4">
           <ShoppingBag className="h-5 w-5 text-primary" />
@@ -52,7 +51,7 @@ export function SuggestionsDisplay({ suggestions, recommendations }: Suggestions
             <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
               <div className="aspect-square bg-muted/20 relative">
                 <img
-                  src={item.image || "/placeholder.svg?height=200&width=200"}
+                  src={"/placeholder.svg?height=200&width=200"}
                   alt={item.name}
                   className="w-full h-full object-cover"
                 />
